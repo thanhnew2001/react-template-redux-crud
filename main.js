@@ -7,48 +7,37 @@ import thunk from 'redux-thunk'
 import Test from './Test.jsx'
 
 function students(state = [], action){
-    if(action.type=='LOAD_STUDENT'){
-        console.log(state)
-        return state
-    } else if(action.type=='FETCH_STUDENT_SUCCESS'){
+     if(action.type=='FETCH_STUDENT_SUCCESS'){
         return action.payload
     }
     else if(action.type=='ADD_STUDENT'){
         console.log(action.payload)
         return [...state, action.payload]
-    } else if(action.type==='DELETE_STUDENT'){
-        console.log(action.type)
-        return state.filter((s)=>s.name!==action.payload)
+    } else if(action.type==='DELETE_STUDENT'){ //by id now
+        return state.filter((s)=>s._id!==action.payload)
     }
     else{
         return state
     }
 }
-// npm install --save redux-thunk
 
+//Always has to initialize this, otherwise it will inject a undefined to edit form
+function editedStudent(state = {id: '', name: '', age: ''}, action){
+    if(action.type==='EDIT_STUDENT'){
+        return action.payload
+    }
+    else return state
+}
 
-// function fetchStudent(){
-//     return function(dispatch){
-//         fetch("http://bestlab.us:8080/students")
-//         .then(function(res){
-//             return res.json()
-//         })
-//         .then(function(data){
-//             dispatch({
-//                 type: 'FETCH_STUDENT_SUCCESS',
-//                 students: data
-//             })
-//         })   
-//     }
-// }
-
-function fetchStudent(){
+export function fetchStudent(){
     return function(dispatch){
         fetch('http://bestlab.us:8080/students')
         .then(function(res){
             return res.json()
         })
         .then(function(data){
+
+            console.log(data)
             dispatch({
                 type: 'FETCH_STUDENT_SUCCESS',
                 payload: data
@@ -79,8 +68,60 @@ export function addStudent(student){
     }
 }
 
+export function updateStudent(student){
+    return function(dispatch){
+        fetch('http://bestlab.us:8080/students', {
+            headers: {
+                'Accept': 'application/json, text/plain, */*',
+                'Content-Type': 'application/json'
+              },
+            method: 'put', 
+            body: JSON.stringify(student)
+        })
+        .then(function(res){
+            return res.json()
+        })
+        .then(function(data){
+            dispatch(fetchStudent())
+        })
+    }
+}
+
+export function deleteStudent(id){
+    return function(dispatch){
+        fetch('http://bestlab.us:8080/students/'+id, {
+            method: 'delete'
+        })
+        .then(function(res){
+            return res.json()
+        })
+        .then(function(data){
+            dispatch({
+                type: 'DELETE_STUDENT',
+                payload: id
+            })
+        })
+    }
+}
+
+export function getStudent(id){
+    return function(dispatch){
+        fetch('http://bestlab.us:8080/students/'+id)
+        .then(function(res){
+            return res.json()
+        })
+        .then(function(data){
+            dispatch({
+                type: 'EDIT_STUDENT',
+                payload: data
+            })
+        })
+    }
+}
+
 var centralState = combineReducers({
-    students
+    students, 
+    editedStudent
 })
 
 var logging = store => next => action => {
@@ -88,13 +129,6 @@ var logging = store => next => action => {
 }
 
 var store = createStore(centralState, applyMiddleware(thunk))
-
-store.dispatch({type: 'LOAD_STUDENT'})
-store.dispatch({type: 'ADD_STUDENT', payload: {name: 'Tim'}})
-store.dispatch({type: 'DELELE_STUDENT', payload: {name: 'Thanh'}})
-store.dispatch(fetchStudent())
-
-
 
 ReactDOM.render(
 <Provider store={store}>    
