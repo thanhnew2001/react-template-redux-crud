@@ -31,7 +31,6 @@ class App extends React.Component{
 
         if(this.state.id===undefined){
             this.props.dispatch(addStudent({
-                _id: this.state.id,
                 name: this.state.name,
                 age: this.state.age
             })) 
